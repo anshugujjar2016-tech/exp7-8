@@ -1,0 +1,68 @@
+
+// Use (or create) the database
+use nimbus_ecommerce;
+
+// Drop the products collection if it exists (optional, for clean re-run)
+db.products.drop();
+
+// Insert sample product documents
+db.products.insertMany([
+  {
+    name: "Running Shoes",
+    price: 120.0,
+    category: "Footwear",
+    variants: [
+      { color: "Red", size: "8", stock: 15 },
+      { color: "Blue", size: "9", stock: 10 }
+    ]
+  },
+  {
+    name: "Yoga Pants",
+    price: 45.0,
+    category: "Apparel",
+    variants: [
+      { color: "Black", size: "M", stock: 25 },
+      { color: "Gray", size: "L", stock: 20 }
+    ]
+  },
+  {
+    name: "Smartwatch",
+    price: 199.99,
+    category: "Electronics",
+    variants: [
+      { color: "Black", size: "Standard", stock: 5 },
+      { color: "Silver", size: "Large", stock: 2 }
+    ]
+  }
+]);
+
+// 1. Retrieve all products
+print("\n--- All Products ---");
+db.products.find().forEach(printjson);
+
+// 2. Filter products by category (e.g., Apparel)
+print("\n--- Products in Category: Apparel ---");
+db.products.find({ category: "Apparel" }).forEach(printjson);
+
+// 3. Project only name and variant colors
+print("\n--- Product Names and Variant Colors ---");
+db.products.find(
+  {},
+  {
+    name: 1,
+    "variants.color": 1,
+    _id: 0
+  }
+).forEach(printjson);
+
+// 4. Find products with at least one variant with stock < 10
+print("\n--- Products with Variant Stock < 10 ---");
+db.products.find({
+  "variants.stock": { $lt: 10 }
+}).forEach(printjson);
+
+// 5. Find products that have a variant in Black
+print("\n--- Products with Variant Color = Black ---");
+db.products.find({
+  "variants.color": "Black"
+}).forEach(printjson);
