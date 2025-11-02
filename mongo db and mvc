@@ -1,0 +1,132 @@
+// setup.js
+
+const fs = require('fs');
+const path = require('path');
+
+// Create folders
+['models', 'controllers', 'routes'].forEach(folder => {
+  if (!fs.existsSync(folder)) fs.mkdirSync(folder);
+});
+
+// Create Student model
+fs.writeFileSync(path.join('models', 'Student.js'), `
+const mongoose = require('mongoose');
+
+const studentSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true
+  },
+  age: Number,
+  course: String
+});
+
+module.exports = mongoose.model('Student', studentSchema);
+`);
+
+// Create Student controller
+fs.writeFileSync(path.join('controllers', 'studentController.js'), `
+const Student = require('../models/Student');
+
+// Create new student
+exports.createStudent = async (req, res) => {
+  try {
+    const student = new Student(req.body);
+    await student.save();
+    res.status(201).json(student);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
+
+// Get all students
+exports.getStudents = async (req, res) => {
+  try {
+    const students = await Student.find();
+    res.json(students);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Get single student
+exports.getStudentById = async (req, res) => {
+  try {
+    const student = await Student.findById(req.params.id);
+    if (!student) return res.status(404).json({ message: 'Student not found' });
+    res.json(student);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Update student
+exports.updateStudent = async (req, res) => {
+  try {
+    const student = await Student.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!student) return res.status(404).json({ message: 'Student not found' });
+    res.json(student);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
+
+// Delete student
+exports.deleteStudent = async (req, res) => {
+  try {
+    const student = await Student.findByIdAndDelete(req.params.id);
+    if (!student) return res.status(404).json({ message: 'Student not found' });
+    res.json({ message: 'Student deleted' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+`);
+
+// Create Routes
+fs.writeFileSync(path.join('routes', 'studentRoutes.js'), `
+const express = require('express');
+const router = express.Router();
+const studentController = require('../controllers/studentController');
+
+router.post('/', studentController.createStudent);
+router.get('/', studentController.getStudents);
+router.get('/:id', studentController.getStudentById);
+router.put('/:id', studentController.updateStudent);
+router.delete('/:id', studentController.deleteStudent);
+
+module.exports = router;
+`);
+
+// Create server file
+fs.writeFileSync('server.js', `
+const express = require('express');
+const mongoose = require('mongoose');
+const studentRoutes = require('./routes/studentRoutes');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.use(express.json());
+app.use('/api/students', studentRoutes);
+
+// MongoDB Connection
+mongoose.connect('mongodb://localhost:27017/studentdb', {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+})
+.then(() => console.log('MongoDB connected'))
+.catch(err => console.error('MongoDB connection error:', err));
+
+// Start Server
+app.listen(PORT, () => {
+  console.log(\`Server running on http://localhost:\${PORT}\`);
+});
+`);
+
+console.log('✅ Project files generated successfully.');
+console.log('👉 Next steps:');
+console.log('1. Run: npm init -y');
+console.log('2. Run: npm install express mongoose');
+console.log('3. Run: node server.js');
+console.log('4. Access API at: http://localhost:3000/api/students');
